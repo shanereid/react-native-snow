@@ -1,19 +1,18 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import {
   StyleSheet,
   Dimensions,
   Animated,
   Easing,
   AppState
-} from 'react-native';
-import PropTypes, { shape } from 'prop-types';
+} from "react-native";
+import PropTypes, { shape } from "prop-types";
 
-const HEIGHT = Dimensions.get('window').height;
-const topOffset = HEIGHT * .1;
+const HEIGHT = Dimensions.get("window").height;
+const topOffset = HEIGHT * 0.1;
 const windowHeight = HEIGHT + topOffset;
 
 export default class Snowflake extends Component {
-
   _fallAnimation = null;
   _shakeAnimation = null;
 
@@ -21,39 +20,45 @@ export default class Snowflake extends Component {
     super(props);
 
     this.state = {
-      glyph: props.glyph || '❅',
+      glyph: props.glyph || "❅",
       visible: props.visible || false,
       size: props.size || 12,
       amplitude: props.amplitude || 60, //80,
-      fallDuration: props.fallDuration || 10000,
+      fallDuration: props.fallDuration || 6000,
       shakeDuration: props.shakeDuration || 4000,
       fallDelay: props.fallDelay || 0,
       shakeDelay: props.shakeDelay || 0,
       offset: props.offset || 0,
       translateY: new Animated.Value(0),
       translateX: new Animated.Value(0),
-      appState: AppState.currentState,
+      appState: AppState.currentState
     };
   }
 
-  _handleAppStateChange = (nextAppState) => {
-    if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
+  _handleAppStateChange = nextAppState => {
+    if (
+      this.state.appState.match(/inactive|background/) &&
+      nextAppState === "active"
+    ) {
       // App is coming into foreground
       this._initAnimation();
     }
-    if (this.state.appState.match(/^active|foreground/) && nextAppState === 'inactive') {
+    if (
+      this.state.appState.match(/^active|foreground/) &&
+      nextAppState === "inactive"
+    ) {
       // App is going into background
       this._stopAnimation();
     }
-    this.setState({appState: nextAppState});
-  }
+    this.setState({ appState: nextAppState });
+  };
 
   _stopAnimation() {
     if (this._fallAnimation) {
       this._fallAnimation.stop();
       this._fallAnimation = null;
       this.setState({
-        translateY: new Animated.Value(0),
+        translateY: new Animated.Value(0)
       });
     }
 
@@ -61,63 +66,54 @@ export default class Snowflake extends Component {
       this._shakeAnimation.stop();
       this._shakeAnimation = null;
       this.setState({
-        translateX: new Animated.Value(0),
+        translateX: new Animated.Value(0)
       });
     }
   }
 
   _initAnimation() {
     this._fallAnimation = Animated.loop(
-      Animated.timing(
-        this.state.translateY,
-        {
-          toValue: 1,
-          easing: Easing.linear,
-          duration: this.state.fallDuration,
-          useNativeDriver: true,
-        }
-      )
+      Animated.timing(this.state.translateY, {
+        toValue: 1,
+        easing: Easing.linear,
+        duration: this.state.fallDuration,
+        useNativeDriver: true
+      })
     );
 
     this._shakeAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(
-          this.state.translateX,
-          {
-            toValue: 1,
-            easing: Easing.easeInOutSine,
-            duration: this.state.shakeDuration / 2,
-            useNativeDriver: true,
-          }
-        ),
-        Animated.timing(
-          this.state.translateX,
-          {
-            toValue: 0,
-            easing: Easing.easeInOutSine,
-            duration: this.state.shakeDuration / 2,
-            useNativeDriver: true,
-          }
-        )
+        Animated.timing(this.state.translateX, {
+          toValue: 1,
+          easing: Easing.easeInOutSine,
+          duration: this.state.shakeDuration / 2,
+          useNativeDriver: true
+        }),
+        Animated.timing(this.state.translateX, {
+          toValue: 0,
+          easing: Easing.easeInOutSine,
+          duration: this.state.shakeDuration / 2,
+          useNativeDriver: true
+        })
       ])
     );
 
-    setTimeout( () => {
+    setTimeout(() => {
       this._fallAnimation && this._fallAnimation.start();
     }, this.state.fallDelay);
 
-    setTimeout( () => {
+    setTimeout(() => {
       this._shakeAnimation && this._shakeAnimation.start();
     }, this.state.shakeDelay);
   }
 
   componentDidMount() {
-    AppState.addEventListener('change', this._handleAppStateChange);
+    AppState.addEventListener("change", this._handleAppStateChange);
     this._initAnimation();
   }
 
   componentWillUnmount() {
-    AppState.removeEventListener('change', this._handleAppStateChange);
+    AppState.removeEventListener("change", this._handleAppStateChange);
   }
 
   render() {
@@ -131,13 +127,36 @@ export default class Snowflake extends Component {
       inputRange: [0, 1],
       outputRange: [0, windowHeight]
     });
+    if (this.props.image) {
+      return (
+        <Animated.Image
+          source={this.props.image}
+          style={[
+            styles.image,
+            {
+              width: this.state.size,
+              height: this.state.size,
+              left: this.state.offset,
+              transform: [{ translateX }, { translateY }]
+            },
+            style
+          ]}
+        />
+      );
+    }
 
     return (
-      <Animated.Text style={[styles.text, {
-        fontSize: this.state.size,
-        left: this.state.offset,
-        transform: [{translateX}, {translateY}]
-      }, style]}>
+      <Animated.Text
+        style={[
+          styles.text,
+          {
+            fontSize: this.state.size,
+            left: this.state.offset,
+            transform: [{ translateX }, { translateY }]
+          },
+          style
+        ]}
+      >
         {this.state.glyph}
       </Animated.Text>
     );
@@ -155,18 +174,21 @@ Snowflake.propTypes = {
   fallDelay: PropTypes.number,
   shakeDelay: PropTypes.number,
   style: shape({
-    color: PropTypes.string,
-  }),
+    color: PropTypes.string
+  })
 };
 
 const styles = StyleSheet.create({
   text: {
     top: -topOffset,
     height: windowHeight,
-    color: 'white',
-    backgroundColor: 'transparent',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 1,
+    color: "white",
+    backgroundColor: "transparent",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1
+  },
+  image: {
+    top: -topOffset
   }
 });
